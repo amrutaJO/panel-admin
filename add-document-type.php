@@ -1,4 +1,33 @@
-<?php require_once __DIR__ . "/header.php" ?>
+<?php 
+
+ob_start();
+
+require_once __DIR__ . "/header.php";
+include "db.php";
+
+if(isset($_POST['submit'])) {
+    $name = $_POST['name'];
+    $description = $_POST['description'];
+
+    // File upload variables
+    $file_name = $_FILES['preview_image']['name'];
+    $tempname = $_FILES['preview_image']['tmp_name'];
+    $folder = 'images/' . $file_name;
+
+    // SQL Query to insert into the database
+    $sql = "INSERT INTO `document_types`(`name`, `preview_image`, `description`) 
+            VALUES ('$name', '$file_name', '$description')";
+
+    mysqli_query($conn, $sql);
+    if (move_uploaded_file($tempname, $folder)) {
+        header("Location: view-document-type.php?msg=Document type added!");
+        ob_end_flush();
+    } else {
+        echo "Error uploading the file!";
+    }
+}
+?>
+
 <div class="content container-fluid">
 	<div class="page-header">
 		<div class="row align-items-center">
@@ -16,29 +45,29 @@
 		</div>
 	</div>
 
-	<form class="row g-3" id="user-form">
+	<form action="" method="post" class="row g-3" id="transport-form" enctype="multipart/form-data">
 		<div class="col-12 col-md-6">
 
-			<label for="" class="form-label"> <?= translate('name') ?> </label>
-			<input type="text" class="form-control form-control-sm" placeholder="<?= translate('name') ?>" required>
+			<label for="" class="form-label"> <?= translate('document_name') ?> </label>
+			<input type="text" class="form-control form-control-sm" name="name" placeholder="<?= translate('name') ?>" required>
 
 		</div>
 		<div class="col-12 col-md-6">
 
 			<label for="formFileMultiple" class="form-label"> <?= translate('upload_preview_image') ?> </label>
-            <input class="form-control form-control-sm" type="file" id="formFileMultiple" multiple required>
+            <input class="form-control form-control-sm" type="file" id="formFileMultiple" name="preview_image" multiple required>
 
 		</div>
 		<div class="col-12 col-md-6">
 
 			<label for="" class="form-label"> <?= translate('description') ?> </label>
-            <textarea class="form-control form-control-sm" placeholder="<?= translate('description') ?>" id="floatingTextarea2" style="height: 100px" required></textarea>
+            <textarea class="form-control form-control-sm" name="description" placeholder="<?= translate('description') ?>" id="floatingTextarea2" style="height: 100px" required></textarea>
 			
 		</div>
 
         <div class="modal-footer pt-0 border-top-0">
             <button type="reset" form="user-form" class="btn btn-sm btn-secondary"> <?= translate('reset') ?></button>
-            <button type="submit" form="user-form" class="btn btn-sm btn-primary ms-2"> <?= translate('save') ?> </button>
+            <button type="submit" name="submit" class="btn btn-sm btn-primary ms-2"> <?= translate('save') ?> </button>
         </div>
 
 	</form>

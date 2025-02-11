@@ -1,4 +1,32 @@
-<?php require_once __DIR__ . "/header.php" ?>
+<?php 
+
+ob_start();
+
+require_once __DIR__ . "/header.php";
+include "db.php";
+
+if(isset($_POST['submit'])) {
+	$manufacturer_name = $_POST['manufacturer_name'];
+	$color = $_POST['color'];
+	$model_name = $_POST['model_name'];
+	$manufacturing_year = $_POST['manufacturing_year'];
+	$seat_arrangement = $_POST['seat_arrangement'];
+
+	$sql = "INSERT INTO `vehicle_master`(`manufacturer_name`, `color`, `model_name`, `manufacturing_year`, `seat_arrangement`) 
+						VALUES ('$manufacturer_name','$color','$model_name','$manufacturing_year','$seat_arrangement')";
+
+	$result = mysqli_query($conn, $sql);
+
+	if($result) {
+		header("Location: vehicle-master.php?msg=New vehicle master added!.");
+		ob_end_flush();
+	} else {
+		echo "Vehicle master not added" . mysqli_error($conn);
+	}
+}
+
+?>
+
 <div class="content container-fluid">
 	<div class="page-header">
 		<div class="row align-items-center">
@@ -17,34 +45,35 @@
 		</div>
 	</div>
 
-	<form action="" class="row g-3" id="transport-form">
+	<form action="" method="post" class="row g-3" id="transport-form">
 		<div class="col-12 col-md-6">
 			<label for="" class="form-label"><?php echo translate('manufacturer_name'); ?></label>
-			<input type="text" class="form-control form-control-sm" placeholder="<?php echo translate('manufacturer_name'); ?>" required>
+			<input type="text" class="form-control form-control-sm" placeholder="<?php echo translate('manufacturer_name'); ?>" name="manufacturer_name" required>
 		</div>
 		<div class="col-12 col-md-6">
 			<label for="" class="form-label"><?php echo translate('vehicle_color'); ?></label>
-			<input type="text" class="form-control form-control-sm" placeholder="<?php echo translate('color'); ?>" required>
+			<input type="text" class="form-control form-control-sm" placeholder="<?php echo translate('color'); ?>" name="color" required>
 		</div>
 		<div class="col-12 col-md-6">
 			<label for="" class="form-label"><?php echo translate('model_name'); ?></label>
-			<input type="text" class="form-control form-control-sm" placeholder="<?php echo translate('model_name'); ?>" required>
+			<input type="text" class="form-control form-control-sm" placeholder="<?php echo translate('model_name'); ?>" name="model_name" required>
 		</div>
 		<div class="col-12 col-md-6">
 			<label for="" class="form-label"><?php echo translate('manufacturing_year'); ?></label>
-			<input type="number" class="form-control form-control-sm" placeholder="<?php echo translate('manufacturing_year'); ?>" required>
+			<input type="number" class="form-control form-control-sm" placeholder="<?php echo translate('manufacturing_year'); ?>" name="manufacturing_year" required>
 		</div>
 		<div class="col-12 col-md-6">
 			<label for="" class="form-label"><?php echo translate('seat_arrangement'); ?></label>
-			<input type="number" class="form-control form-control-sm" placeholder="<?php echo translate('seat_arrangement'); ?>" required>
+			<input type="number" class="form-control form-control-sm" placeholder="<?php echo translate('seat_arrangement'); ?>" name="seat_arrangement" required>
 		</div>
 
         <div class="modal-footer pt-0 border-top-0">
             <button type="reset" form="transport-form" class="btn btn-sm btn-secondary"><?php echo translate('reset'); ?></button>
-            <button type="submit" form="transport-form" class="btn btn-sm btn-primary ms-2"><?php echo translate('save'); ?></button>
+            <button type="submit" form="transport-form" class="btn btn-sm btn-primary ms-2" name="submit" ><?php echo translate('save'); ?></button>
         </div>
 	</form>
 </div>
+
 <?php require_once __DIR__ . '/footer.php' ?>
 
 <script>
