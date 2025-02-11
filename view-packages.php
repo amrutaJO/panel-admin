@@ -1,4 +1,28 @@
-<?php require_once __DIR__ . "/header.php" ?>
+<?php 
+require_once __DIR__ . "/header.php"; 
+require_once __DIR__ . "/db_connect.php"; 
+
+// Handle package update
+if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["update_package"])) {
+    $id = $_POST['package_id'];
+    $distance = $_POST['distance'];
+    $time = $_POST['time'];
+
+    $updateQuery = "UPDATE packages SET distance_km = ?, time_hours = ? WHERE id = ?";
+    $stmt = $conn->prepare($updateQuery);
+    $stmt->bind_param("dsi", $distance, $time, $id);
+
+    if ($stmt->execute()) {
+        echo "<script>alert('Package updated successfully'); window.location.href='rental.php';</script>";
+    } else {
+        echo "<script>alert('Error updating package');</script>";
+    }
+}
+
+$query = "SELECT id, distance_km, time_hours FROM packages"; 
+$result = $conn->query($query); 
+?>
+
 <div class="content container-fluid">
     <div class="page-header">
         <div class="row align-items-center">
@@ -9,22 +33,10 @@
             </div>
         </div>
     </div>
-    <div class="reports-table-filters">
-        <div class="row g-3">
-            <div class="col-12 col-md-3">
-                <div class="input-group input-group-sm">
-                    <div class="input-group-text">
-                        <i class="bi-search"></i>
-                    </div>
-                    <input type="search" class="form-control reports-table-search" placeholder="<?= translate('Search here') ?>">
-                </div>
-            </div>
-        </div>
-    </div>
-
+    
     <div class="table-responsive">
         <table id="data-table" class="table table-bordered table-nowrap table-align-middle">
-            <thead class="thead-light " align="left">
+            <thead class="thead-light" align="left">
                 <tr>
                     <th><?= translate('Serial No') ?></th>
                     <th><?= translate('Distance (km)') ?></th>
@@ -33,78 +45,72 @@
                 </tr>
             </thead>
             <tbody>
-                <tr>
-                    <!-- Sample row, add dynamic content here -->
-                    <td>01</td>
-                    <td>15</td>
-                    <td>2</td>
-                    <td>
-                        <div class="dropdown">
-                            <button class="btn btn-sm btn-white dropdown-toggle" type="button" data-bs-toggle="dropdown"
-                                aria-expanded="false">
-                                <?= translate('Actions') ?>
-                            </button>
-                            <ul class="dropdown-menu">
-                                <li><a class="dropdown-item" href="#"><?= translate('Transactions') ?></a></li>
-                                <li><a class="dropdown-item" href="#"><?= translate('Redeems') ?></a></li>
-                            </ul>
-                        </div>
-                    </td>
-                </tr>
+                <?php
+                if ($result->num_rows > 0) {
+                    while ($row = $result->fetch_assoc()) {
+                        echo "<tr>
+                                <td>{$row['id']}</td>
+                                <td>{$row['distance_km']}</td>
+                                <td>{$row['time_hours']}</td>
+                                <td>
+                                    <div class='dropdown'>
+                                        <button class='btn btn-sm btn-white dropdown-toggle' type='button' data-bs-toggle='dropdown' aria-expanded='false'>
+                                            " . translate('Actions') . "
+                                        </button>
+                                        <ul class='dropdown-menu'>
+                                            <li><a class='dropdown-item' href='#' onclick='openEditModal({$row['id']}, \"{$row['distance_km']}\", \"{$row['time_hours']}\")'>" . translate('Edit') . "</a></li>
+                                            <li><a class='dropdown-item text-danger' href='delete_package.php?id=" . $row['id'] . "' onclick='return confirm(\"Are you sure you want to delete this package?\")'>" . translate('Delete') . "</a></li>
+                                        </ul>
+                                    </div>
+                                </td>
+                              </tr>";
+                    }
+                } else {
+                    echo "<tr><td colspan='4' class='text-center'>" . translate('No packages found') . "</td></tr>";
+                }
+                ?>
             </tbody>
         </table>
     </div>
-    <div class="data-table-footer"></div>
 </div>
-<?php require_once __DIR__ . '/footer.php' ?>
+
+<!-- Edit Modal -->
+<div class="modal fade" id="editModal" tabindex="-1" aria-labelledby="editModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title"><?= translate('Edit Package') ?></h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form method="POST" action="">
+                <div class="modal-body">
+                    <input type="hidden" id="package_id" name="package_id">
+                    <div class="mb-3">
+                        <label class="form-label"><?= translate('Distance (KM)') ?></label>
+                        <input type="number" id="distance" name="distance" class="form-control" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label"><?= translate('Time (Hours)') ?></label>
+                        <input type="text" id="time" name="time" class="form-control" required>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="submit" name="update_package" class="btn btn-primary"><?= translate('Save Changes') ?></button>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal"><?= translate('Close') ?></button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
 
 <script>
-    let sowingListTable = false;
-    sowingListTable = $('#data-table').DataTable({
-        lengthChange: true,
-        columnDefs: [{
-            // targets: [0,],
-            // orderable: false,
-        }],
-        order: [
-            [1, 'desc'],
-            [0, 'desc']
-        ],
-        initComplete: function (settings, json) {
-            $('.dataTables_filter').hide();
-            $('.data-table-footer').append($('#data-table_wrapper .row:last-child()')).find('.previous').addClass('ms-md-auto');
-            $('.dataTables_info').before($('.dataTables_length').find('label').attr('class', 'd-inline-flex text-nowrap align-items-center gap-2'));
-            $('.data-table-search').on('input', function () {
-                sowingListTable.search(this.value).draw();
-            });
-            sowingListTable.buttons().container().find('.btn-secondary').removeClass('btn-secondary');
-            sowingListTable.buttons().container().appendTo($('.export-buttons'));
-        },
-        buttons: [{
-            extend: 'collection',
-            text: '<i class="bi bi-cloud-download-fill"></i>',
-            className: 'btn-sm btn-outline-primary',
-            buttons: [{
-                extend: 'copy',
-                text: '<i class="bi-clipboard2-check dropdown-item-icon"></i> <?= translate('Copy') ?>'
-            },
-            {
-                extend: 'excel',
-                text: '<i class="bi-filetype-xlsx dropdown-item-icon"></i> <?= translate('Excel') ?>'
-            },
-            {
-                extend: 'csv',
-                text: '<i class="bi-filetype-csv dropdown-item-icon"></i> <?= translate('CSV') ?>'
-            },
-            {
-                extend: 'pdf',
-                text: '<i class="bi-filetype-pdf dropdown-item-icon"></i> <?= translate('PDF') ?>'
-            },
-            {
-                extend: 'print',
-                text: '<i class="bi-printer dropdown-item-icon"></i> <?= translate('Print') ?>'
-            }
-            ]
-        }],
-    });
+function openEditModal(id, distance, time) {
+    document.getElementById('package_id').value = id;
+    document.getElementById('distance').value = distance;
+    document.getElementById('time').value = time;
+    var editModal = new bootstrap.Modal(document.getElementById('editModal'));
+    editModal.show();
+}
 </script>
+
+<?php require_once __DIR__ . '/footer.php'; ?>

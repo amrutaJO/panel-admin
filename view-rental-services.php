@@ -1,23 +1,19 @@
-<?php require_once __DIR__ . "/header.php" ?>
+<?php 
+require_once __DIR__ . "/header.php"; 
+require_once __DIR__ . "/db_connect.php"; // Ensure database connection
+?>
+
 <div class="content container-fluid">
     <div class="page-header">
         <div class="row align-items-center">
             <div class="col">
                 <h1 class="page-header-title d-flex align-items-center gap-3">
-                    <!-- <a href="reports" class="link-dark"><i class="bi-arrow-left-circle-fill align-middle"></i></a> -->
-                   <span><?= translate('view_rental_services') ?></span>
-
+                    <span><?= translate('view_rental_services') ?></span>
                 </h1>
             </div>
-
-            <!-- <div class="col-auto">
-                <a class="btn btn-sm btn-primary" href="javascript:void(0)" onclick="addTransport()">
-                    <i class="bi-plus-circle me-1"></i>
-                    Add New </a>
-            </div> -->
-
         </div>
     </div>
+
     <div class="reports-table-filters">
         <div class="row g-3">
             <div class="col-12 col-md-3">
@@ -25,105 +21,215 @@
                     <div class="input-group-text">
                         <i class="bi-search"></i>
                     </div>
-                  <input type="search" class="form-control reports-table-search" placeholder="<?= translate('search_placeholder') ?>">
-
+                    <input type="search" class="form-control reports-table-search" placeholder="<?= translate('search_placeholder') ?>">
                 </div>
             </div>
-
         </div>
     </div>
 
-   <div class="table-responsive">
-    <table id="data-table" class="table table-bordered table-nowrap table-align-middle">
-        <thead class="thead-light" align="left">
-            <tr>
-                <th><?= translate('serial_no') ?></th>
-                <th><?= translate('hourly_package') ?></th>
-                <th><?= translate('base_fare') ?></th>
-                <th><?= translate('booking_fee') ?></th>
-                <th><?= translate('vehicle_type') ?></th>
-                <th><?= translate('per_km_rate') ?></th>
-                <th><?= translate('per_minute_rate') ?></th>
-                <th><?= translate('action') ?></th>
-            </tr>
-        </thead>
-        <tbody>
-            <tr>
-                <td>01</td>
-                <td><?= translate('first_package') ?></td>
-                <td>50Rs</td>
-                <td>10Rs</td>
-                <td><?= translate('bike') ?></td>
-                <td>1.5Rs</td>
-                <td>0.5Rs</td>
-                <td>
-                    <div class="dropdown">
-                        <button class="btn btn-sm btn-white dropdown-toggle" type="button" data-bs-toggle="dropdown"
-                            aria-expanded="false">
-                            <?= translate('actions') ?>
-                        </button>
-                        <ul class="dropdown-menu">
-                            <li><a class="dropdown-item" href="#"><?= translate('transactions') ?></a></li>
-                            <li><a class="dropdown-item" href="#"><?= translate('redeems') ?></a></li>
-                        </ul>
-                    </div>
-                </td>
-            </tr>
-        </tbody>
-    </table>
+    <div class="table-responsive">
+        <table id="data-table" class="table table-bordered table-nowrap table-align-middle">
+            <thead class="thead-light" align="left">
+                <tr>
+                    <th><?= translate('serial_no') ?></th>
+                    <th><?= translate('hourly_package') ?></th>
+                    <th><?= translate('base_fare') ?></th>
+                    <th><?= translate('booking_fee') ?></th>
+                    <th><?= translate('vehicle_type') ?></th>
+                    <th><?= translate('per_km_rate') ?></th>
+                    <th><?= translate('per_minute_rate') ?></th>
+                    <th><?= translate('action') ?></th>
+                </tr>
+            </thead>
+            <tbody>
+                <?php
+                $sql = "SELECT * FROM rental_services ORDER BY id DESC";
+                $result = $conn->query($sql);
+                $serial = 1;
+
+                while ($row = $result->fetch_assoc()) {
+                    echo "<tr id='row_{$row['id']}'>";
+                    echo "<td>{$serial}</td>";
+                    echo "<td>{$row['hourly_package']}</td>";
+                    echo "<td>{$row['base_fare']} Rs</td>";
+                    echo "<td>{$row['booking_fee']} Rs</td>";
+                    echo "<td>{$row['vehicle_type']}</td>";
+                    echo "<td>{$row['per_km_rate']} Rs</td>";
+                    echo "<td>{$row['per_minute_rate']} Rs</td>";
+                    echo "<td>
+                            <div class='dropdown'>
+                                <button class='btn btn-sm btn-white dropdown-toggle' type='button' data-bs-toggle='dropdown' aria-expanded='false'>
+                                    " . translate('actions') . "
+                                </button>
+                                <ul class='dropdown-menu'>
+                                    <li><a class='dropdown-item edit-btn' href='#' data-id='{$row['id']}' data-package='{$row['hourly_package']}' data-fare='{$row['base_fare']}' data-booking='{$row['booking_fee']}' data-type='{$row['vehicle_type']}' data-kmrate='{$row['per_km_rate']}' data-minrate='{$row['per_minute_rate']}'>" . translate('Edit') . "</a></li>
+                                    <li><a class='dropdown-item text-danger delete-btn' href='#' data-id='{$row['id']}'>" . translate('Delete') . "</a></li>
+                                </ul>
+                            </div>
+                          </td>";
+                    echo "</tr>";
+                    $serial++;
+                }
+                ?>
+            </tbody>
+        </table>
+    </div>
 </div>
 
-    <div class="data-table-footer"></div>
+<!-- Edit Modal -->
+<div id="editModal" class="modal fade" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Edit Rental Service</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="editForm">
+                    <input type="hidden" id="edit_id">
+                    <div class="mb-3">
+                        <label for="edit_package" class="form-label">Hourly Package</label>
+                        <select id="edit_package" class="form-control">
+                        <option value="">Select Package</option>
+                        <option value="basic">Basic</option>
+                        <option value="premium">Premium</option>
+                        <option value="luxury">Luxury</option>
+</select>
+
+                    </div>
+                    <div class="mb-3">
+                        <label for="edit_fare" class="form-label">Base Fare (Rs)</label>
+                        <input type="number" id="edit_fare" class="form-control">
+                    </div>
+                    <div class="mb-3">
+                        <label for="edit_booking" class="form-label">Booking Fee (Rs)</label>
+                        <input type="number" id="edit_booking" class="form-control">
+                    </div>
+                    <div class="mb-3">
+                        <label for="edit_type" class="form-label">Vehicle Type</label>
+                                <select id="edit_type" class="form-control">
+                        <option value="">Select Package</option>
+                        <option value="bike"><?= translate('bike') ?></option>
+                        <option value="three-wheeler"><?= translate('three_wheeler') ?></option>
+                        <option value="car"><?= translate('car') ?></option>
+                      <option value="bike"><?= translate('bike') ?></option>
+                        <option value="truck"><?= translate('truck') ?></option>
+                        <option value="other"><?= translate('other') ?></option>
+                                    
+</select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="edit_kmrate" class="form-label">Per KM Rate (Rs)</label>
+                        <input type="number" id="edit_kmrate" class="form-control">
+                    </div>
+                    <div class="mb-3">
+                        <label for="edit_minrate" class="form-label">Per Minute Rate (Rs)</label>
+                        <input type="number" id="edit_minrate" class="form-control">
+                    </div>
+                    <button type="submit" class="btn btn-primary">Save Changes</button>
+                </form>
+            </div>
+        </div>
+    </div>
 </div>
-<?php require_once __DIR__ . '/footer.php' ?>
 
 <script>
-    let sowingListTable = false;
-    sowingListTable = $('#data-table').DataTable({
-        lengthChange: true,
-        columnDefs: [{
-            // targets: [0,],
-            // orderable: false,
-        }],
-        order: [
-            [1, 'desc'],
-            [0, 'desc']
-        ],
-        initComplete: function (settings, json) {
-            $('.dataTables_filter').hide();
-            $('.data-table-footer').append($('#data-table_wrapper .row:last-child()')).find('.previous').addClass('ms-md-auto');
-            $('.dataTables_info').before($('.dataTables_length').find('label').attr('class', 'd-inline-flex text-nowrap align-items-center gap-2'));
-            $('.data-table-search').on('input', function () {
-                sowingListTable.search(this.value).draw();
+    document.addEventListener("DOMContentLoaded", function () {
+        // Delete Button
+        document.querySelectorAll(".delete-btn").forEach(button => {
+            button.addEventListener("click", function (event) {
+                event.preventDefault();
+                let id = this.getAttribute("data-id");
+                if (confirm("Are you sure you want to delete this service?")) {
+                    fetch("delete_rental_service.php", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+                        body: "id=" + id
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.status === "success") {
+                            document.getElementById("row_" + id).remove();
+                        } else {
+                            alert("Failed to delete.");
+                        }
+                    });
+                }
             });
-            sowingListTable.buttons().container().find('.btn-secondary').removeClass('btn-secondary');
-            sowingListTable.buttons().container().appendTo($('.export-buttons'));
-        },
-        buttons: [{
-            extend: 'collection',
-            text: '<i class="bi bi-cloud-download-fill"></i>',
-            className: 'btn-sm btn-outline-primary',
-            buttons: [{
-                extend: 'copy',
-                text: '<i class="bi-clipboard2-check dropdown-item-icon"></i> Copy'
-            },
-            {
-                extend: 'excel',
-                text: '<i class="bi-filetype-xlsx dropdown-item-icon"></i> Excel'
-            },
-            {
-                extend: 'csv',
-                text: '<i class="bi-filetype-csv dropdown-item-icon"></i> CSV'
-            },
-            {
-                extend: 'pdf',
-                text: '<i class="bi-filetype-pdf dropdown-item-icon"></i> PDF'
-            },
-            {
-                extend: 'print',
-                text: '<i class="bi-printer dropdown-item-icon"></i> Print'
-            }
-            ]
-        }],
+        });
+
+        // Edit Button
+        document.querySelectorAll(".edit-btn").forEach(button => {
+            button.addEventListener("click", function () {
+                document.getElementById("edit_id").value = this.getAttribute("data-id");
+                document.getElementById("edit_package").value = this.getAttribute("data-package");
+                document.getElementById("edit_fare").value = this.getAttribute("data-fare");
+                document.getElementById("edit_booking").value = this.getAttribute("data-booking");
+                document.getElementById("edit_type").value = this.getAttribute("data-type");
+                document.getElementById("edit_kmrate").value = this.getAttribute("data-kmrate");
+                document.getElementById("edit_minrate").value = this.getAttribute("data-minrate");
+
+                new bootstrap.Modal(document.getElementById("editModal")).show();
+            });
+        });
+
+        // Edit Form Submission
+        document.getElementById("editForm").addEventListener("submit", function (event) {
+            event.preventDefault();
+
+            let formData = new FormData();
+            formData.append("id", document.getElementById("edit_id").value);
+            formData.append("hourlyPackage", document.getElementById("edit_package").value);
+            formData.append("baseFare", document.getElementById("edit_fare").value);
+            formData.append("bookingFee", document.getElementById("edit_booking").value);
+            formData.append("vehicleType", document.getElementById("edit_type").value);
+            formData.append("perKmRate", document.getElementById("edit_kmrate").value);
+            formData.append("perMinuteRate", document.getElementById("edit_minrate").value);
+
+            fetch("edit_rental_service.php", {
+                method: "POST",
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === "success") {
+                    alert("Rental service updated successfully!");
+                    location.reload();
+                } else {
+                    alert("Failed to update rental service.");
+                }
+            });
+        });
     });
+    document.getElementById("editForm").addEventListener("submit", function(event) {
+    event.preventDefault();
+
+    let formData = new FormData();
+    formData.append("id", document.getElementById("edit_id").value);
+    formData.append("hourly_package", document.getElementById("edit_package").value);
+    formData.append("base_fare", document.getElementById("edit_fare").value);
+    formData.append("booking_fee", document.getElementById("edit_booking").value);
+    formData.append("vehicle_type", document.getElementById("edit_type").value);
+    formData.append("per_km_rate", document.getElementById("edit_kmrate").value);
+    formData.append("per_minute_rate", document.getElementById("edit_minrate").value);
+
+    fetch("update_rental_service.php", {
+        method: "POST",
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.status === "success") {
+            alert("Rental service updated successfully!");
+            location.reload(); // Refresh the page to see changes
+        } else {
+            alert("Update failed!");
+        }
+    });
+});
+
 </script>
+
+
+<?php require_once __DIR__ . '/footer.php'; ?>
+ 

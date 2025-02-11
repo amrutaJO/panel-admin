@@ -5,12 +5,6 @@
             <div class="col">
                 <h1 class="page-header-title"><?= translate('Add Package') ?></h1>
             </div>
-            <div class="col-auto">
-				<a class="btn btn-sm btn-primary" href="view-packages.php">
-					<i class="bi-card-list me-1"></i>
-					<?= translate('view_packages') ?>
-				</a>
-			</div>
         </div>
     </div>
 
