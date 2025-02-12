@@ -1,4 +1,10 @@
 <?php require_once __DIR__ . '/header.php'; ?>
+<?php
+require_once __DIR__ . "/db.php"; // Include database connection
+
+$sql = "SELECT * FROM cancellations ORDER BY date DESC";
+$result = $conn->query($sql);
+?>
 <div class="content container-fluid">
     <!-- Page Header -->
     <div class="page-header">
@@ -45,29 +51,21 @@
                 </tr>
             </thead>
             <tbody>
+            <?php while ($row = $result->fetch_assoc()) : ?>
                 <tr>
-                    <td>01</td>
-                    <td>Manish Sonawane</td>
-                    <td><?= translate('late_delivery') ?></td>
-                    <td>UID876</td>
-                    <td>VCL9676</td>
-                    <td>Rahul Barhate</td>
-                    <td>10-01-2025</td>
+                    <td><?= $row['id'] ?></td>
+                    <td><?= $row['customer_name'] ?></td>
+                    <td><?= $row['cancellation_reason'] ?></td>
+                    <td><?= $row['customer_id'] ?></td>
+                    <td><?= $row['vehicle_id'] ?></td>
+                    <td><?= $row['driver_name'] ?></td>
+                    <td><?= $row['date'] ?></td>
                     <td>
-                        <div class="dropdown">
-                            <button class="btn btn-sm btn-white dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
-                                <?= translate('actions') ?>
-                            </button>
-                            <ul class="dropdown-menu">
-                                <li><a class="dropdown-item" href="#"><?= translate('view') ?></a></li>
-                                <li><a class="dropdown-item" href="#"><?= translate('edit') ?></a></li>
-                                <li><a class="dropdown-item" href="#"><?= translate('delete') ?></a></li>
-                            </ul>
-                        </div>
+                        <a href="delete-cancellation.php?id=<?= $row['id'] ?>" class="btn btn-sm btn-danger">Delete</a>
                     </td>
                 </tr>
-            </tbody>
-        </table>
+            <?php endwhile; ?>
+        </tbody>        </table>
     </div>
     <div class="data-table-footer"></div>
 </div>
