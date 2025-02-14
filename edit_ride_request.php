@@ -10,24 +10,22 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $type = $_POST['requestType'];
     $status = $_POST['status'];
 
-    $sql = "UPDATE ride_requests
-            SET user = ?,
-                pickup_address = ?,
-                drop_address = ?,
-                time = ?,
-                type = ?,
+    $sql = "UPDATE ride_request
+            SET user = ?, 
+                pickup_address = ?, 
+                drop_address = ?, 
+                time = ?, 
+                type = ?, 
                 status = ?
             WHERE id = ?";
 
     $stmt = $conn->prepare($sql);
-    $stmt->bind_param("sssssi", $user, $pickup_address, $drop_address, $time, $type, $status, $id);
+    $stmt->bind_param("ssssssi", $user, $pickup_address, $drop_address, $time, $type, $status, $id);
 
     if ($stmt->execute()) {
         echo json_encode(["status" => "success"]);
     } else {
-        echo json_encode(["status" => "error"]);
+        echo json_encode(["status" => "error", "message" => "Failed to update data."]);
     }
-
-    $stmt->close();
-    $conn->close();
 }
+?>

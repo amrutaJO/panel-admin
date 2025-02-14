@@ -2,37 +2,37 @@
 require_once __DIR__ . "/header.php";
 require_once __DIR__ . "/db.php"; // Include the database connection file
 
-// Translation function for UI labels
-function translate($key) {
+function translate($key)
+{
     $translations = [
-        'ride_requests'    => 'Ride Requests',
-        'sr_no'            => 'Sr. No.',
-        'transaction_id'   => 'Transaction ID',
-        'user_name'        => 'User Name',
-        'pickup_address'   => 'Pickup Address',
-        'drop_address'     => 'Drop Address',
-        'request_time'     => 'Request Time',
-        'request_type'     => 'Request Type',
-        'status'           => 'Status',
-        'Actions'          => 'Actions',
-        'search_here'      => 'Search here',
+        'ride_request' => 'Ride Request',
+        'sr_no' => 'Sr. No.',
+        'transaction_id' => 'Transaction ID',
+        'user_name' => 'User Name',
+        'pickup_address' => 'Pickup Address',
+        'drop_address' => 'Drop Address',
+        'request_time' => 'Request Time',
+        'request_type' => 'Request Type',
+        'status' => 'Status',
+        'Actions' => 'Actions',
+        'search_here' => 'Search here',
     ];
 
     return isset($translations[$key]) ? $translations[$key] : $key;
 }
 
-// Retrieve filter variables from GET request
-$filterUser   = isset($_GET['userName']) ? $_GET['userName'] : '';
+// Filter variables
+$filterUser = isset($_GET['userName']) ? $_GET['userName'] : '';
 $filterPickup = isset($_GET['pickupAddress']) ? $_GET['pickupAddress'] : '';
-$filterDrop   = isset($_GET['dropAddress']) ? $_GET['dropAddress'] : '';
-$filterTime   = isset($_GET['requestTime']) ? $_GET['requestTime'] : '';
-$filterType   = isset($_GET['requestType']) ? $_GET['requestType'] : '';
+$filterDrop = isset($_GET['dropAddress']) ? $_GET['dropAddress'] : '';
+$filterTime = isset($_GET['requestTime']) ? $_GET['requestTime'] : '';
+$filterType = isset($_GET['requestType']) ? $_GET['requestType'] : '';
 $filterStatus = isset($_GET['status']) ? $_GET['status'] : '';
 
-// Build the SQL query using the correct table name "ride_request"
+// Start building the SQL query
 $sql = "SELECT * FROM ride_request WHERE 1=1";
 
-// Apply filters if provided
+// Apply filters if selected
 if ($filterUser !== '') {
     $sql .= " AND user = '$filterUser'";
 }
@@ -53,6 +53,7 @@ if ($filterStatus !== '') {
 }
 
 $result = $conn->query($sql);
+
 ?>
 
 <div class="content container-fluid">
@@ -60,13 +61,12 @@ $result = $conn->query($sql);
     <div class="page-header">
         <div class="row align-items-center">
             <div class="col">
-                <h1 class="page-header-title"><?= translate('ride_requests') ?></h1>
+                <h1 class="page-header-title"><?= translate('ride_request') ?></h1>
             </div>
         </div>
     </div>
     <!-- End Page Header -->
 
-    <!-- Filter Modal -->
     <div class="modal fade" id="transactionfilterModal" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1"
         aria-labelledby="filterModalLabel" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
@@ -112,7 +112,6 @@ $result = $conn->query($sql);
         </div>
     </div>
 
-    <!-- Search Bar and Export Buttons -->
     <div class="table-responsive">
         <div class="d-flex justify-content-between align-items-center mb-2">
             <!-- Search Bar -->
@@ -121,11 +120,11 @@ $result = $conn->query($sql);
                     <div class="input-group-text">
                         <i class="bi-search"></i>
                     </div>
-                    <input type="search" class="form-control service-table-search" placeholder="<?= translate('search_here') ?>">
+                    <input type="search" class="form-control service-table-search" placeholder="Search here">
                 </div>
             </div>
 
-            <!-- Filter and Export Buttons -->
+            <!-- Filter Button and Export Buttons -->
             <div class="d-flex align-items-center gap-2">
                 <button class="btn btn-sm btn-secondary" data-bs-toggle="modal" data-bs-target="#transactionfilterModal">
                     Filter <i class="bi bi-funnel-fill"></i>
@@ -135,7 +134,7 @@ $result = $conn->query($sql);
         </div>
     </div>
 
-    <!-- Data Table -->
+    <!-- Table -->
     <div class="table-responsive">
         <table id="data-table" class="table table-bordered table-nowrap table-align-middle">
             <thead class="thead-light" align="left">
@@ -155,17 +154,15 @@ $result = $conn->query($sql);
                 <?php
                 $sr_no = 1;
                 while ($row = $result->fetch_assoc()) {
-                    // Encode row data for use in the edit modal
                     $rideData = htmlspecialchars(json_encode([
-                        "id"              => $row['id'],
-                        "user"            => $row['user'],
-                        "pickup_address"  => $row['pickup_address'],
-                        "drop_address"    => $row['drop_address'],
-                        "time"            => $row['time'],
-                        "type"            => $row['type'],
-                        "status"          => $row['status']
+                        "id" => $row['id'],
+                        "user" => $row['user'],
+                        "pickup_address" => $row['pickup_address'],
+                        "drop_address" => $row['drop_address'],
+                        "time" => $row['time'],
+                        "type" => $row['type'],
+                        "status" => $row['status']
                     ]), JSON_UNESCAPED_SLASHES);
-
                     echo "<tr>
                         <td>" . htmlspecialchars($sr_no) . "</td>
                         <td>" . htmlspecialchars($row['id']) . "</td>
@@ -258,60 +255,10 @@ $result = $conn->query($sql);
     </div>
 </div>
 
-<!-- JavaScript for handling DataTable, Edit, and Delete actions -->
 <script>
-    document.addEventListener("DOMContentLoaded", function () {
-        let rideRequestTable = $('#data-table').DataTable({
-            lengthChange: true,
-            columnDefs: [{
-                "orderable": false,
-                "targets": 0
-            }],
-            order: [
-                [1, 'asc'],
-                [0, 'asc']
-            ],
-            initComplete: function (settings, json) {
-                $('.dataTables_filter').hide();
-                $('.data-table-footer').append($('#data-table_wrapper .row:last-child()')).find('.previous').addClass('ms-md-auto');
-                $('.dataTables_info').before($('.dataTables_length').find('label').attr('class', 'd-inline-flex text-nowrap align-items-center gap-2'));
-                $('.data-table-search').on('input', function () {
-                    rideRequestTable.search(this.value).draw();
-                });
-                rideRequestTable.buttons().container().find('.btn-secondary').removeClass('btn-secondary');
-                rideRequestTable.buttons().container().appendTo($('.export-buttons'));
-            },
-            buttons: [{
-                extend: 'collection',
-                text: '<i class="bi bi-cloud-download-fill"></i>',
-                className: 'btn-sm btn-outline-primary',
-                buttons: [{
-                    extend: 'copy',
-                    text: '<i class="bi-clipboard2-check dropdown-item-icon"></i> Copy'
-                },
-                {
-                    extend: 'excel',
-                    text: '<i class="bi-filetype-xlsx dropdown-item-icon"></i> Excel'
-                },
-                {
-                    extend: 'csv',
-                    text: '<i class="bi-filetype-csv dropdown-item-icon"></i> CSV'
-                },
-                {
-                    extend: 'pdf',
-                    text: '<i class="bi-filetype-pdf dropdown-item-icon"></i> PDF'
-                },
-                {
-                    extend: 'print',
-                    text: '<i class="bi-printer dropdown-item-icon"></i> Print'
-                }
-                ]
-            }],
-        });
-
-        // Handle Edit button click
+    document.addEventListener("DOMContentLoaded", function() {
         document.querySelectorAll(".edit-row-btn").forEach(button => {
-            button.addEventListener("click", function () {
+            button.addEventListener("click", function() {
                 let rideData = JSON.parse(this.getAttribute("data-ride-request"));
                 document.getElementById("rideRequestId").value = rideData.id;
                 document.getElementById("transactionId").value = rideData.id;
@@ -327,30 +274,47 @@ $result = $conn->query($sql);
             });
         });
 
-        // Handle Delete button click
+        document.getElementById("ride-request-form").addEventListener("submit", function(event) {
+            event.preventDefault();
+
+            let formData = new FormData(this);
+            fetch("edit_ride_request.php", {
+                    method: "POST",
+                    body: formData
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === "success") {
+                        alert("Ride request updated successfully!");
+                        location.reload(); // Refresh the page to see changes
+                    } else {
+                        alert("Error updating ride request: " + data.message);
+                    }
+                })
+                .catch(error => console.error("Error:", error));
+        });
+
         document.querySelectorAll(".delete-row-btn").forEach(button => {
-            button.addEventListener("click", function () {
-                const rideRequestId = this.getAttribute('data-ride-request-id');
-                if (confirm('Are you sure you want to delete this ride request?')) {
-                    // Send an AJAX request to delete the record
-                    fetch('delete_ride_request.php', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/x-www-form-urlencoded',
-                        },
-                        body: `id=${rideRequestId}`
-                    })
-                    .then(response => response.json())
-                    .then(data => {
-                        if (data.status === 'success') {
-                            alert('Record deleted successfully');
-                            const row = this.closest('tr');
-                            row.remove();
-                        } else {
-                            alert('Error deleting record');
-                        }
-                    })
-                    .catch(error => console.error('Error:', error));
+            button.addEventListener("click", function() {
+                const rideRequestId = this.getAttribute("data-ride-request-id");
+                if (confirm("Are you sure you want to delete this ride request?")) {
+                    fetch("delete_ride_request.php", {
+                            method: "POST",
+                            headers: {
+                                "Content-Type": "application/x-www-form-urlencoded"
+                            },
+                            body: "id=" + rideRequestId
+                        })
+                        .then(response => response.json())
+                        .then(data => {
+                            if (data.status === "success") {
+                                alert("Ride request deleted successfully!");
+                                location.reload(); // Refresh the table
+                            } else {
+                                alert("Error deleting ride request: " + data.message);
+                            }
+                        })
+                        .catch(error => console.error("Error:", error));
                 }
             });
         });
